@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Альт · Тренажёр позиций и интервалов</title>
+    <title>Струнный тренажёр · Альт и Скрипка</title>
     <style>
         * { box-sizing: border-box; }
         body {
@@ -23,6 +23,25 @@
         h1 { font-size: 1.7rem; margin: 0 0 8px; border-left: 5px solid #b87333; padding-left: 15px; }
         .sub { color: #4b3b2c; margin-bottom: 24px; font-size: 0.85rem; padding-left: 20px; }
         .info { background: #f9f2e3; border-radius: 24px; padding: 12px 18px; font-size: 0.85rem; margin-bottom: 20px; border-left: 4px solid #b87333; }
+        .instrument-bar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            justify-content: center;
+            font-size: 1rem;
+        }
+        .instrument-bar label {
+            cursor: pointer;
+            background: #e2dcd2;
+            padding: 8px 20px;
+            border-radius: 40px;
+            font-weight: 600;
+            transition: 0.1s;
+        }
+        .instrument-bar input[type="radio"]:checked + span {
+            background: #2c5f2d;
+            color: white;
+        }
         .mode-bar { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
         .mode-btn {
             background: #e2dcd2; border: none; padding: 8px 14px; border-radius: 40px;
@@ -53,14 +72,21 @@
 </head>
 <body>
 <div class="container">
-    <h1>🎻 Альт · позиции и интервалы</h1>
-    <div class="sub">Русские названия нот · 1–5 позиции · низкие/высокие пальцы · интервалы на грифе</div>
-    <div class="info">
-        <p><strong>🎵 Струны (открытые ноты):</strong><br>
-        1‑я (A) → <strong>ля мал</strong> (A3) · 2‑я (D) → <strong>ре мал</strong> (D3)<br>
-        3‑я (G) → <strong>соль бол</strong> (G2) · 4‑я (C) → <strong>до бол</strong> (C2)</p>
-        <p><strong>✍️ Нота:</strong> <code>ля#мал</code>, <code>сиbмал</code> (b = бемоль)<br>
-        <strong>Интервал:</strong> <code>ч5</code> (чистая квинта), <code>б3</code> (большая терция), <code>м2</code>, <code>ув4</code> / <code>ум5</code></p>
+    <h1>🎻 Струнный тренажёр</h1>
+    <div class="sub">Альт и Скрипка · позиции, пальцы, интервалы</div>
+
+    <!-- Переключатель инструмента -->
+    <div class="instrument-bar" id="instrumentBar">
+        <label>
+            <input type="radio" name="instrument" value="viola" checked> 🎻 Альт
+        </label>
+        <label>
+            <input type="radio" name="instrument" value="violin"> 🎻 Скрипка
+        </label>
+    </div>
+
+    <div class="info" id="infoBox">
+        <!-- Заполняется динамически -->
     </div>
 
     <div class="mode-bar" id="modeBar">
@@ -74,7 +100,6 @@
 
     <div class="card">
         <div class="question" id="questionText">—</div>
-        <!-- Дополнительные элементы управления (видны только для выбранных режимов) -->
         <div id="extraControls"></div>
         <div class="input-group">
             <input type="text" id="answerInput" placeholder="ответ" autocomplete="off">
@@ -82,36 +107,65 @@
         </div>
         <div class="feedback" id="feedbackMsg">Нажмите «Проверить»</div>
     </div>
-        <button class="next-btn" id="nextBtn">🎲 Следующий вопрос</button>
+    <button class="next-btn" id="nextBtn">🎲 Следующий вопрос</button>
     <footer>Аппликатура: стандартная мажорная · низкий/высокий = ± полутон · Интервалы: заданы вверх/вниз</footer>
-    <div style="text-align: center; margin-top: 4px; font-size: 0.65rem;">
-      <a href="https://github.com/maratserebryakov/Viola_trainer_and_intervals/blob/main/README.md" 
-         target="_blank" rel="noopener noreferrer" 
-         style="color: #b87333; text-decoration: none; border-bottom: 1px dotted #b87333;">
-        🌸🎻 читать README
-      </a>
-    </div>
 </div>
 
 <script>
     (function() {
-        // ===================== НАСТРОЙКИ АЛЬТА =====================
-        const STRINGS = {
-            1: { name: "A (ля)", openMidi: 57 },  // A3
-            2: { name: "D (ре)", openMidi: 50 },  // D3
-            3: { name: "G (соль)", openMidi: 43 }, // G2
-            4: { name: "C (до)", openMidi: 36 }   // C2
+        // ===================== ИНСТРУМЕНТЫ =====================
+        const INSTRUMENTS = {
+            viola: {
+                name: "Альт",
+                strings: {
+                    1: { name: "A (ля)", openMidi: 57, openRus: "лямал" },  // A3
+                    2: { name: "D (ре)", openMidi: 50, openRus: "ремал" },  // D3
+                    3: { name: "G (соль)", openMidi: 43, openRus: "сольбол" }, // G2
+                    4: { name: "C (до)", openMidi: 36, openRus: "добол" }    // C2
+                },
+                infoText: `
+                    <p><strong>🎵 Струны (открытые ноты):</strong><br>
+                    1‑я (A) → <strong>ля мал</strong> (A3) · 2‑я (D) → <strong>ре мал</strong> (D3)<br>
+                    3‑я (G) → <strong>соль бол</strong> (G2) · 4‑я (C) → <strong>до бол</strong> (C2)</p>
+                    <p><strong>✍️ Нота:</strong> <code>ля#мал</code>, <code>сиbмал</code> (b = бемоль)<br>
+                    <strong>Интервал:</strong> <code>ч5</code>, <code>б3</code>, <code>м2</code>, <code>ув4</code> / <code>ум5</code></p>
+                `
+            },
+            violin: {
+                name: "Скрипка",
+                strings: {
+                    1: { name: "E (ми)", openMidi: 76, openRus: "мивтор" },  // E5
+                    2: { name: "A (ля)", openMidi: 69, openRus: "ляперв" },  // A4
+                    3: { name: "D (ре)", openMidi: 62, openRus: "реперв" },  // D4
+                    4: { name: "G (соль)", openMidi: 55, openRus: "сольмал" } // G3
+                },
+                infoText: `
+                    <p><strong>🎵 Струны (открытые ноты):</strong><br>
+                    1‑я (E) → <strong>ми втор</strong> (E5) · 2‑я (A) → <strong>ля перв</strong> (A4)<br>
+                    3‑я (D) → <strong>ре перв</strong> (D4) · 4‑я (G) → <strong>соль мал</strong> (G3)</p>
+                    <p><strong>✍️ Нота:</strong> <code>ля#перв</code>, <code>сиbмал</code> (b = бемоль)<br>
+                    <strong>Интервал:</strong> <code>ч5</code>, <code>б3</code>, <code>м2</code>, <code>ув4</code> / <code>ум5</code></p>
+                `
+            }
         };
+
+        // ===================== ГЛОБАЛЬНОЕ СОСТОЯНИЕ =====================
+        let currentInstrument = 'viola';
+        let STRINGS = INSTRUMENTS[currentInstrument].strings;
+        let currentMode = 1;
+        let currentQuestion = null;
+        let selectedIntervals = ["ч1","м2","б2","м3","б3","ч4","ув4","ч5","м6","б6","м7","б7","ч8"];
+
         const POSITION_SHIFT = { 1:2, 2:4, 3:5, 4:7, 5:9 };
         const FINGER_SHIFT_NORM = { 1:0, 2:2, 3:3, 4:5 };
-
         const NOTE_NAMES_RUS = ["до","до#","ре","ре#","ми","фа","фа#","соль","соль#","ля","ля#","си"];
 
+        // ===================== УТИЛИТЫ =====================
         function midiToRussian(midi) {
             let octave = Math.floor(midi / 12) - 1;
             let noteIndex = midi % 12;
             let noteName = NOTE_NAMES_RUS[noteIndex];
-            let octName = ["бол","бол","бол","мал","перв","втор","трет","трет"][Math.min(octave,7)];
+            let octName;
             if (octave <= 2) octName = "бол";
             else if (octave === 3) octName = "мал";
             else if (octave === 4) octName = "перв";
@@ -154,30 +208,30 @@
             return openMidi + posShift + fingerShift;
         }
 
-        // ===================== ИНТЕРВАЛЫ =====================
         const INTERVALS = {
             "ч1":0, "м2":1, "б2":2, "м3":3, "б3":4, "ч4":5, "ув4":6, "ум5":6,
             "ч5":7, "м6":8, "б6":9, "м7":10, "б7":11, "ч8":12
         };
-        const INTERVAL_NAMES = Object.keys(INTERVALS).filter(k => k !== "ум5"); // ув4/ум5 одно и то же
-
-        // ===================== СОСТОЯНИЕ =====================
-        let currentMode = 1;
-        let currentQuestion = null;
-        let selectedIntervals = INTERVAL_NAMES.slice(); // по умолчанию все
 
         // ===================== ГЕНЕРАЦИЯ ВОПРОСОВ =====================
         function randomInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
 
-        function generateQuestion1() {
-            const string = randomInt(1,4), pos = randomInt(1,5), finger = randomInt(1,4);
-            const alt = Math.random() < 0.7 ? 0 : (Math.random() < 0.5 ? -1 : 1);
+        function generateQuestion1(altOverride = null) {
+            const string = randomInt(1,4);
+            const pos = randomInt(1,5);
+            const finger = randomInt(1,4);
+            let alt;
+            if (altOverride !== null) alt = altOverride;
+            else {
+                const r = Math.random();
+                alt = r < 0.7 ? 0 : (r < 0.85 ? -1 : 1);
+            }
             const midi = getNoteFromParams(string, pos, finger, alt);
             const note = midiToRussian(midi);
             const altText = alt === -1 ? "низкий " : (alt === 1 ? "высокий " : "");
             return {
                 type:1, string, pos, finger, alt, correctNote: note,
-                questionText: `🎻 Струна ${string} (${STRINGS[string].name})<br>Позиция ${pos} · ${altText}палец ${finger}`
+                questionText: `🎻 Струна ${string} (${STRINGS[string].name.split(' ')[0]})<br>Позиция ${pos} · ${altText}палец ${finger}`
             };
         }
 
@@ -185,21 +239,22 @@
             const string = randomInt(1,4);
             const candidates = [];
             for (let pos=1; pos<=5; pos++) for (let finger=1; finger<=4; finger++) {
-                candidates.push({ pos, finger, note: midiToRussian(getNoteFromParams(string, pos, finger, 0)) });
+                candidates.push({
+                    pos, finger,
+                    note: midiToRussian(getNoteFromParams(string, pos, finger, 0))
+                });
             }
             const c = candidates[randomInt(0, candidates.length-1)];
             return {
                 type:2, string, correctPos: c.pos, correctFinger: c.finger, correctNote: c.note,
-                questionText: `🔍 Струна ${string} (${STRINGS[string].name})<br>Нота: ${c.note}<br>❓ Позиция и палец (норм.)`
+                questionText: `🔍 Струна ${string} (${STRINGS[string].name.split(' ')[0]})<br>Нота: ${c.note}<br>❓ Позиция и палец (норм.)`
             };
         }
 
         function generateQuestion4() {
             const dir = document.querySelector('input[name="intDir"]:checked')?.value || "up";
             const string = randomInt(1,4), pos = randomInt(1,5), finger = randomInt(1,4);
-            const alt = 0; // только нормальное положение
-            const baseMidi = getNoteFromParams(string, pos, finger, alt);
-            // выбираем интервал из отмеченных
+            const baseMidi = getNoteFromParams(string, pos, finger, 0);
             const selected = [...document.querySelectorAll('.interval-check:checked')].map(cb => cb.value);
             if (selected.length === 0) return null;
             const intervalName = selected[randomInt(0, selected.length-1)];
@@ -208,7 +263,7 @@
             const targetNote = midiToRussian(targetMidi);
             const dirText = dir === "up" ? "вверх" : "вниз";
             return {
-                type:4, string, pos, finger, alt, baseMidi, intervalName, dir, correctNote: targetNote,
+                type:4, string, pos, finger, alt:0, baseMidi, intervalName, dir, correctNote: targetNote,
                 questionText: `🎻 Струна ${string}, поз.${pos}, палец ${finger} (норм)<br>Интервал: <b>${intervalName}</b> ${dirText}<br>→ Назови получившуюся ноту`
             };
         }
@@ -219,13 +274,9 @@
             const midi1 = getNoteFromParams(string1, pos1, finger1, 0);
             const midi2 = getNoteFromParams(string2, pos2, finger2, 0);
             const diff = Math.abs(midi2 - midi1);
-            // определяем интервал
             let intervalName = "";
             for (let [name, semis] of Object.entries(INTERVALS)) {
-                if (semis === diff % 12) {
-                    intervalName = name;
-                    break;
-                }
+                if (semis === diff % 12) { intervalName = name; break; }
             }
             if (!intervalName) return generateQuestion5();
             const note1 = midiToRussian(midi1), note2 = midiToRussian(midi2);
@@ -237,12 +288,15 @@
         }
 
         function generateQuestion() {
-            if (currentMode === 1) return generateQuestion1();
-            if (currentMode === 2) return generateQuestion2();
-            if (currentMode === 3) return Math.random() < 0.5 ? generateQuestion1() : generateQuestion2();
-            if (currentMode === 4) return generateQuestion4() || generateQuestion1();
-            if (currentMode === 5) return generateQuestion5();
-            if (currentMode === 6) return generateQuestion4() || generateQuestion1();
+            if (currentMode === 1) {
+                const radio = document.querySelector('input[name="altSelect"]:checked');
+                const forcedAlt = radio ? parseInt(radio.value) : null;
+                return generateQuestion1(forcedAlt);
+            } else if (currentMode === 2) return generateQuestion2();
+            else if (currentMode === 3) return Math.random() < 0.5 ? generateQuestion1() : generateQuestion2();
+            else if (currentMode === 4) return generateQuestion4() || generateQuestion1();
+            else if (currentMode === 5) return generateQuestion5();
+            else if (currentMode === 6) return generateQuestion4() || generateQuestion1();
             return generateQuestion1();
         }
 
@@ -250,9 +304,12 @@
         const questionDiv = document.getElementById('questionText');
         const answerInput = document.getElementById('answerInput');
         const feedbackDiv = document.getElementById('feedbackMsg');
-        const checkBtn = document.getElementById('checkBtn');
-        const nextBtn = document.getElementById('nextBtn');
         const extraControls = document.getElementById('extraControls');
+        const infoBox = document.getElementById('infoBox');
+
+        function updateInfo() {
+            infoBox.innerHTML = INSTRUMENTS[currentInstrument].infoText;
+        }
 
         function renderExtraControls() {
             let html = '';
@@ -263,7 +320,7 @@
                     <label><input type="radio" name="intDir" value="down"> вниз</label>
                 </div>
                 <div class="interval-options" id="intervalChecks">
-                    ${INTERVAL_NAMES.map(int => `
+                    ${["ч1","м2","б2","м3","б3","ч4","ув4","ч5","м6","б6","м7","б7","ч8"].map(int => `
                         <label><input type="checkbox" class="interval-check" value="${int}" checked> ${int}</label>
                     `).join('')}
                 </div>`;
@@ -310,9 +367,8 @@
                     `❌ Неверно. Правильно: поз.${currentQuestion.correctPos}, палец ${currentQuestion.correctFinger}`;
                 feedbackDiv.style.background = ok ? '#d9e6d3' : '#ffe0cf';
             } else if (currentQuestion.type === 5) {
-                // интервал
                 const ans = raw.replace(/\s/g,'');
-                if (ans === currentQuestion.correctInterval || 
+                if (ans === currentQuestion.correctInterval ||
                     (ans === "ум5" && currentQuestion.correctInterval === "ув4") ||
                     (ans === "ув4" && currentQuestion.correctInterval === "ум5")) {
                     feedbackDiv.innerHTML = `✅ Верно! Интервал: ${currentQuestion.correctInterval}`;
@@ -339,20 +395,29 @@
             nextQuestion();
         }
 
-        // Слушатели
+        function switchInstrument(instrument) {
+            currentInstrument = instrument;
+            STRINGS = INSTRUMENTS[instrument].strings;
+            updateInfo();
+            nextQuestion();
+        }
+
+        // ===================== ИНИЦИАЛИЗАЦИЯ =====================
+        document.querySelectorAll('input[name="instrument"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                if (e.target.checked) switchInstrument(e.target.value);
+            });
+        });
+
         document.querySelectorAll('.mode-btn').forEach(btn => {
             btn.addEventListener('click', () => setMode(parseInt(btn.dataset.mode)));
         });
-        checkBtn.addEventListener('click', checkAnswer);
-        nextBtn.addEventListener('click', nextQuestion);
+        document.getElementById('checkBtn').addEventListener('click', checkAnswer);
+        document.getElementById('nextBtn').addEventListener('click', nextQuestion);
         answerInput.addEventListener('keypress', e => { if (e.key === 'Enter') checkAnswer(); });
-        document.addEventListener('change', e => {
-            if (e.target.classList.contains('interval-check') || e.target.name === 'intDir') {
-                // просто сохраняем, следующий вопрос будет с новыми настройками
-            }
-        });
 
         // Старт
+        updateInfo();
         setMode(1);
     })();
 </script>
